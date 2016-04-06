@@ -3,13 +3,14 @@ Codesenter plugin for Sublime Text
 
 Loads a given file, and gradually reveals it as you bang on the keyboard. 
 """
-# pylint: disable=W0221,C0325
+# pylint: disable=W0221
 
+import os
 import sublime
 import sublime_plugin
-import os
 
 FILE_SOURCE = '/Users/fwph/code/sublime/codepresenter/dummy.txt'
+
 
 projects = {}
 views = {}
@@ -23,7 +24,7 @@ class CodepresenterBaseCommand(sublime_plugin.WindowCommand):
         self.code_presenter_config = None
         self.source = None
         self.sink = None
-
+        self.views = {}
         self.load_config()
 
     def load_config(self):
@@ -42,6 +43,7 @@ class CodepresenterBaseCommand(sublime_plugin.WindowCommand):
         if self.code_presenter_config is not None:
             self.source = self.code_presenter_config.get('source', None)
             self.sink = self.code_presenter_config.get('sink', None)
+
 
 
 class CodepresenterSetSourceCommand(CodepresenterBaseCommand):
@@ -103,9 +105,9 @@ class CodepresenterActivateCommand(CodepresenterBaseCommand):
 
         source_files = os.listdir(self.source)
         global views
-        for view_data in views.values():
+        for view in self.window.views(): #views.values():
             try:
-                view = view_data['view']
+                #view = view_data['view']
                 self.window.focus_view(view)
                 view.set_scratch(True)
                 self.window.run_command("close_file")
@@ -115,18 +117,20 @@ class CodepresenterActivateCommand(CodepresenterBaseCommand):
 
         for filep in source_files:
             base = os.path.basename(filep)
-            some_view = self.window.open_file(os.path.join(self.sink, base))
             character_source = []
             sinkfile = os.path.join(self.sink, filep)
 
             if os.path.exists(sinkfile):
                 os.remove(sinkfile)
+            some_view = self.window.open_file(os.path.join(self.sink, base))
+
             with open(os.path.join(self.source, filep), 'r') as infile:
                 character_source = list(infile.read())
             views[some_view.id()] = {'source_file' : os.path.join(self.source, filep), 
                                      'character_source' : character_source,
                                      'last_size' : None,
                                      'view' : some_view}
+        self.window.set_sidebar_visible(False)
 
 class CodepresenterinsertCommand(sublime_plugin.TextCommand):
     """
@@ -139,6 +143,7 @@ class CodepresenterinsertCommand(sublime_plugin.TextCommand):
         self.index = 0
         self.last_region = sublime.Region(-1, 0)
         self.character_source = None
+
     def run(self, edit):
         if self.character_source is None:
             self.character_source = views[self.view.id()]['character_source']

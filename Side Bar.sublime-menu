@@ -1,0 +1,35 @@
+[
+{ 
+    "id" : "codepresenter_parent",
+    "caption" : "CodePresenter Actions",
+    "children":
+    [
+        {
+            "id" : "set_codepresenter_source",
+            "caption" : "Set Source Folder",
+            "command" : "codepresenter_set_source",
+            "args" : {
+                "dirs" : []
+            }
+        },
+        {
+            "id" : "set_codepresenter_sink",
+            "caption" : "Set Sink Folder",
+            "command" : "codepresenter_set_sink",
+            "args" : {
+                "dirs" : []
+            }
+        },
+        {
+            "id" : "codepresenter_activate",
+            "caption" : "Start Code Presentation",
+            "command" : "codepresenter_activate"
+        },
+        {
+            "id" : "codepresenter_debug",
+            "caption" : "debug",
+            "command" : "codepresenter_debug"
+        }
+    ]
+}
+]
