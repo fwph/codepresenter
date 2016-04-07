@@ -69,11 +69,27 @@ class CodePresenterProject(object):
         self.views = {}
 
         CodePresenterProject.PROJECTS[self.project_id] = self
+        self.load_config()
 
     @classmethod
     def get_project(cls, window):
         """ used to retrieve a particular project by window ID """
-        return cls.PROJECTS.get(window.id(), None)
+
+        if not window.id() in cls.PROJECTS:
+            cls(window)
+
+        return cls.PROJECTS[window.id()]
+
+
+    @classmethod
+    def find_view(cls, view):
+        """ used to retrieve a particular project by window ID """
+        project = cls.get_project(view.window())
+        cp_view = None
+        if project is not None:
+            cp_view = project.get_view(view)
+
+        return cp_view
 
     @property
     def project_id(self):
@@ -126,6 +142,7 @@ class CodePresenterProject(object):
                 sinkpath = os.path.join(self.sink, sinkfile)
                 if os.path.exists(sinkpath):
                     os.remove(sinkpath)
+        self.views = {}
 
     def activate(self):
         """
@@ -149,3 +166,6 @@ class CodePresenterProject(object):
     def add_view(self, view):
         """ put it in the view dict. """
         self.views[view.view_id] = view
+
+    def get_view(self, view):
+        return self.views.get(view.id(), None)
