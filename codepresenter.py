@@ -8,6 +8,7 @@ Loads a given file, and gradually reveals it as you bang on the keyboard.
 import os
 import sublime
 import sublime_plugin
+from CodePresenter import codepresenter_util
 
 FILE_SOURCE = '/Users/fwph/code/sublime/codepresenter/dummy.txt'
 
@@ -20,30 +21,11 @@ class CodepresenterBaseCommand(sublime_plugin.WindowCommand):
     def __init__(self, *args, **kwargs):
         super(CodepresenterBaseCommand, self).__init__(*args, **kwargs)
         
-        self.project_data = None
-        self.code_presenter_config = None
-        self.source = None
-        self.sink = None
-        self.views = {}
-        self.load_config()
+        self.cp_project = codepresenter_util.CodePresenterProject.get_project(self.window)
 
     def load_config(self):
         """ load the codepresenter config for the project """
-        project_data_file = self.window.project_file_name()
-        if project_data_file is None:
-            return
-
-        project_data = self.window.project_data()
-        projects[project_data_file] = project_data
-
-        self.project_data = projects[project_data_file]
-        
-        if project_data_file is not None:
-            self.code_presenter_config = self.project_data.get('codepresenter', None)
-        if self.code_presenter_config is not None:
-            self.source = self.code_presenter_config.get('source', None)
-            self.sink = self.code_presenter_config.get('sink', None)
-
+        self.cp_project.load_config()
 
 
 class CodepresenterSetSourceCommand(CodepresenterBaseCommand):
@@ -53,14 +35,9 @@ class CodepresenterSetSourceCommand(CodepresenterBaseCommand):
 
     def run(self, dirs):
         """ run """
-        if self.project_data is None:
-            print("CodePresenter: Requires a project to work!")
-            return
-        if self.code_presenter_config is None:
-            self.code_presenter_config = {'active' : True}
-            self.project_data['codepresenter'] = self.code_presenter_config
-        self.code_presenter_config['source'] = dirs[0]
-        self.window.set_project_data(self.project_data)
+        self.cp_project.load_config()
+        self.cp_project.source=dirs[0]
+        self.cp_project.update_project_config()
 
 class CodepresenterSetSinkCommand(CodepresenterBaseCommand):
     """ command for the sidebar to set the code presenter sink directory """
@@ -69,14 +46,9 @@ class CodepresenterSetSinkCommand(CodepresenterBaseCommand):
 
     def run(self, dirs):
         """ run """
-        if self.project_data is None:
-            return
-        if self.code_presenter_config is None:
-            self.code_presenter_config = {'active' : True}
-            self.project_data['codepresenter'] = self.code_presenter_config
-        self.sink = dirs[0]
-        self.code_presenter_config['sink'] = self.sink
-        self.window.set_project_data(self.project_data)
+        self.cp_project.load_config()
+        self.cp_project.sink = dirs[0]
+        self.cp_project.update_project_config()
 
 class CodepresenterDebugCommand(CodepresenterBaseCommand):
     """ print some debug information to the console """
@@ -85,12 +57,8 @@ class CodepresenterDebugCommand(CodepresenterBaseCommand):
 
     def run(self):
         self.load_config()
-
-        print(self.window.project_file_name())
-        print(os.listdir(self.source))
-        print(self.source)
-        print(self.sink)
-
+        print(self.cp_project)
+        print(os.listdir(self.cp_project.source))
 
 class CodepresenterActivateCommand(CodepresenterBaseCommand):
     def __init__(self, *args, **kwargs):
@@ -99,38 +67,8 @@ class CodepresenterActivateCommand(CodepresenterBaseCommand):
     def run(self, *args, **kwargs):
         self.load_config()
 
-        if self.source is None or self.sink is None:
-            print("CodePresenter: Refusing to activate without a source and a sink")
-            return
-
-        source_files = os.listdir(self.source)
-        global views
-        for view in self.window.views(): #views.values():
-            try:
-                #view = view_data['view']
-                self.window.focus_view(view)
-                view.set_scratch(True)
-                self.window.run_command("close_file")
-            except Exception:
-                pass
-        views = {}
-
-        for filep in source_files:
-            base = os.path.basename(filep)
-            character_source = []
-            sinkfile = os.path.join(self.sink, filep)
-
-            if os.path.exists(sinkfile):
-                os.remove(sinkfile)
-            some_view = self.window.open_file(os.path.join(self.sink, base))
-
-            with open(os.path.join(self.source, filep), 'r') as infile:
-                character_source = list(infile.read())
-            views[some_view.id()] = {'source_file' : os.path.join(self.source, filep), 
-                                     'character_source' : character_source,
-                                     'last_size' : None,
-                                     'view' : some_view}
-        self.window.set_sidebar_visible(False)
+        self.cp_project.clear_sink()
+        self.cp_project.activate()
 
 class CodepresenterinsertCommand(sublime_plugin.TextCommand):
     """
@@ -145,20 +83,10 @@ class CodepresenterinsertCommand(sublime_plugin.TextCommand):
         self.character_source = None
 
     def run(self, edit):
-        if self.character_source is None:
-            self.character_source = views[self.view.id()]['character_source']
+        cp_view = codepresenter_util.CodePresenterProject.find_view(self.view)
+        if cp_view is not None:
+            cp_view.do_edit(edit)
 
-        cursor = self.view.sel()[0]
-        cursor.a = cursor.a - 1
-        if cursor.a == self.last_region.a or\
-            cursor.b != self.view.size() or self.index >= len(self.character_source):
-            pass
-        else:
-            self.last_region = cursor
-            self.view.erase(edit, cursor)
-            self.view.insert(edit, self.view.size(), self.character_source[self.index])
-            #print(self.character_source)
-            self.index += 1
 
 class CodepresenterEventListener(sublime_plugin.EventListener):
     """
@@ -171,10 +99,13 @@ class CodepresenterEventListener(sublime_plugin.EventListener):
 
     def on_modified(self, view):
         """ runs the insertion command when the target view is modified """
-        if view.id() in views:
-            if views[view.id()]['last_size'] == None:
-                views[view.id()]['last_size'] = view.size()
-            elif views[view.id()]['last_size'] > view.size():
+        if view.window() is None:
+            return
+        cp_view = codepresenter_util.CodePresenterProject.find_view(view)
+        if cp_view is not None:
+            if cp_view.last_size is None:
+                cp_view.last_size = view.size()
+            elif cp_view.last_size > view.size():
                 pass
             view.run_command('codepresenterinsert')
 
