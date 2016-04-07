@@ -15,6 +15,7 @@ Usage:
     - mash that keyboard!
 
 Notes:
+
     - All files in the sink folder will be destroyed when the presentation is started
     - All views in the active window will be closed, even if changes have been made, when the presentation is started
     - It won't handle subdirectories nicely, yet.
