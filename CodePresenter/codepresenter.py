@@ -106,6 +106,9 @@ class CodepresenterEventListener(sublime_plugin.EventListener):
             if cp_view.last_size is None:
                 cp_view.last_size = view.size()
             elif cp_view.last_size > view.size():
-                pass
+                cp_view.last_size = view.size()
+                return
+            elif cp_view.last_size == view.size():
+                return
             view.run_command('codepresenterinsert')
 

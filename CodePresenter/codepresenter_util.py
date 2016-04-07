@@ -34,17 +34,18 @@ class CodePresenterView(object):
         if self.character_source is None:
             with open(self.source, 'r') as insource:
                 self.character_source = list(insource.read())
+                self.index = 0
 
         cursor = self.view.sel()[0]
         cursor.a = cursor.a - 1
-        if cursor.a == self.last_region.a or\
-            cursor.b != self.view.size() or self.index >= len(self.character_source):
+        if cursor.b != self.view.size() or self.index >= len(self.character_source):
             pass
         else:
             self.last_region = cursor
             self.view.erase(edit, cursor)
             self.view.insert(edit, self.view.size(), self.character_source[self.index])
             self.index += 1
+            self.last_size = self.view.size()
 
 class CodePresenterProject(object):
     """ handling for the code presenter project itself.
