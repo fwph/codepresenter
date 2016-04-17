@@ -24,4 +24,5 @@ with your wizardry.
   * All files in the sink folder will be destroyed when the presentation is started
   * All views in the active window will be closed, even if changes have been made, when the presentation is started
   * It won't handle subdirectories nicely, yet.
-  * I do not recommend mashing on the enter key; there are currently some issues with that.
+  * I do not recommend mashing on the enter key; there are currently some issues with that (notably, tab insertion and various macros that occur when the enter key is pressed.)
+  * This is my first Sublime Text plugin, if you have any feedback about the way it's written, please contact me!
