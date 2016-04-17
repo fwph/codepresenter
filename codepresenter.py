@@ -107,7 +107,7 @@ class CodePresenterProject(object):
         self.project_data = self.window.project_data()
         
         if self.project_file is not None:
-            self.code_presenter_config = self.project_data.get('codepresenter', None)
+            self.code_presenter_config = self.project_data.get('settings', {}).get('codepresenter', None)
         if self.code_presenter_config is not None:
             self.source = self.code_presenter_config.get('source', None)
             self.sink = self.code_presenter_config.get('sink', None)
@@ -120,7 +120,9 @@ class CodePresenterProject(object):
 
         if self.code_presenter_config is None:
             self.code_presenter_config = {'active' : True}
-            self.project_data['codepresenter'] = self.code_presenter_config
+            if self.project_data.get('settings', None) is None:
+                self.project_data['settings'] = {}
+            self.project_data['settings']['codepresenter'] = self.code_presenter_config
 
         self.code_presenter_config['source'] = self.source
         self.code_presenter_config['sink'] = self.sink
