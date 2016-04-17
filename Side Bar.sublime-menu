@@ -1,34 +1,34 @@
 [
 { 
-    "id" : "codepresenter_parent",
+    "id" : "code_presenter_parent",
     "caption" : "CodePresenter Actions",
     "children":
     [
         {
-            "id" : "set_codepresenter_source",
+            "id" : "set_code_presenter_source",
             "caption" : "Set Source Folder",
-            "command" : "codepresenter_set_source",
+            "command" : "code_presenter_set_source",
             "args" : {
                 "dirs" : []
             }
         },
         {
-            "id" : "set_codepresenter_sink",
+            "id" : "set_code_presenter_sink",
             "caption" : "Set Sink Folder",
-            "command" : "codepresenter_set_sink",
+            "command" : "code_presenter_set_sink",
             "args" : {
                 "dirs" : []
             }
         },
         {
-            "id" : "codepresenter_activate",
+            "id" : "code_presenter_activate",
             "caption" : "Start Code Presentation",
-            "command" : "codepresenter_activate"
+            "command" : "code_presenter_activate"
         },
         {
-            "id" : "codepresenter_debug",
+            "id" : "code_presenter_debug",
             "caption" : "debug",
-            "command" : "codepresenter_debug"
+            "command" : "code_presenter_debug"
         }
     ]
 }

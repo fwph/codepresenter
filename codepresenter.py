@@ -1,7 +1,10 @@
 """ 
-Codesenter plugin for Sublime Text
+CodePresenter plugin for Sublime Text
 
 Loads a given file, and gradually reveals it as you bang on the keyboard. 
+
+Known issue: banging on the 'enter' key will frequently cause macros to run,
+which this doesn't deal with nicely now. So skip enter.
 """
 import os
 import sublime
@@ -173,10 +176,10 @@ class CodePresenterProject(object):
         """ retrieve a view from the local store """
         return self.views.get(view.id(), None)
 
-class CodepresenterBaseCommand(sublime_plugin.WindowCommand):
+class CodePresenterBaseCommand(sublime_plugin.WindowCommand):
     """ base class for the various commands that need info about the project """
     def __init__(self, *args, **kwargs):
-        super(CodepresenterBaseCommand, self).__init__(*args, **kwargs)
+        super(CodePresenterBaseCommand, self).__init__(*args, **kwargs)
         
         self.cp_project = CodePresenterProject.get_project(self.window)
 
@@ -185,10 +188,10 @@ class CodepresenterBaseCommand(sublime_plugin.WindowCommand):
         self.cp_project.load_config()
 
 
-class CodepresenterSetSourceCommand(CodepresenterBaseCommand):
+class CodePresenterSetSourceCommand(CodepresenterBaseCommand):
     """ command for the sidebar to set the code presenter source directory """
     def __init__(self, *args, **kwargs):
-        super(CodepresenterSetSourceCommand, self).__init__(*args, **kwargs)
+        super(CodePresenterSetSourceCommand, self).__init__(*args, **kwargs)
 
     def run(self, **kwargs):
         """ run """
@@ -197,10 +200,10 @@ class CodepresenterSetSourceCommand(CodepresenterBaseCommand):
         self.cp_project.source = dirs[0]
         self.cp_project.update_project_config()
 
-class CodepresenterSetSinkCommand(CodepresenterBaseCommand):
+class CodePresenterSetSinkCommand(CodepresenterBaseCommand):
     """ command for the sidebar to set the code presenter sink directory """
     def __init__(self, *args, **kwargs):
-        super(CodepresenterSetSinkCommand, self).__init__(*args, **kwargs)
+        super(CodePresenterSetSinkCommand, self).__init__(*args, **kwargs)
 
     def run(self, **kwargs):
         """ run """
@@ -209,19 +212,19 @@ class CodepresenterSetSinkCommand(CodepresenterBaseCommand):
         self.cp_project.sink = dirs[0]
         self.cp_project.update_project_config()
 
-class CodepresenterDebugCommand(CodepresenterBaseCommand):
+class CodePresenterDebugCommand(CodepresenterBaseCommand):
     """ print some debug information to the console """
     def __init__(self, *args, **kwargs):
-        super(CodepresenterDebugCommand, self).__init__(*args, **kwargs)
+        super(CodePresenterDebugCommand, self).__init__(*args, **kwargs)
 
     def run(self):
         self.load_config()
         print(self.cp_project)
         print(os.listdir(self.cp_project.source))
 
-class CodepresenterActivateCommand(CodepresenterBaseCommand):
+class CodePresenterActivateCommand(CodepresenterBaseCommand):
     def __init__(self, *args, **kwargs):
-        super(CodepresenterActivateCommand, self).__init__(*args, **kwargs)
+        super(CodePresenterActivateCommand, self).__init__(*args, **kwargs)
         
     def run(self):
         self.load_config()
@@ -229,14 +232,14 @@ class CodepresenterActivateCommand(CodepresenterBaseCommand):
         self.cp_project.clear_sink()
         self.cp_project.activate()
 
-class CodepresenterinsertCommand(sublime_plugin.TextCommand):
+class CodePresenterInsertCommand(sublime_plugin.TextCommand):
     """
     Does the actual text insertion into the view.
 
     This will be in place of anything else typed.
     """
     def __init__(self, *args, **kwargs):
-        super(CodepresenterinsertCommand, self).__init__(*args, **kwargs)
+        super(CodePresenterInsertCommand, self).__init__(*args, **kwargs)
         self.index = 0
         self.last_region = sublime.Region(-1, 0)
         self.character_source = None
@@ -247,14 +250,14 @@ class CodepresenterinsertCommand(sublime_plugin.TextCommand):
             cp_view.do_edit(edit)
 
 
-class CodepresenterEventListener(sublime_plugin.EventListener):
+class CodePresenterEventListener(sublime_plugin.EventListener):
     """
     Listens for new views, and view modified events.
 
     When the target view is modified, issues an InsertcodeCommand
     """
     def __init__(self, *args, **kwargs):
-        super(CodepresenterEventListener, self).__init__(*args, **kwargs)
+        super(CodePresenterEventListener, self).__init__(*args, **kwargs)
 
     def on_modified(self, view):
         """ runs the insertion command when the target view is modified """
@@ -269,5 +272,5 @@ class CodepresenterEventListener(sublime_plugin.EventListener):
                 return
             elif cp_view.last_size == view.size():
                 return
-            view.run_command('codepresenterinsert')
+            view.run_command('code_presenter_insert')
 
