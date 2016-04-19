@@ -29,7 +29,7 @@ class CodePresenterView(object):
         return self.view.id()
 
     def do_edit(self, edit):
-        """ do the actual edit. first erase the text that was just added 
+        """ do the actual edit. first erase the text that was just added
             (last character, since this should be called for every character
             entry) then append the next character.
 
@@ -124,10 +124,11 @@ class CodePresenterProject(object):
             return
 
         if self.code_presenter_config is None:
-            self.code_presenter_config = {'active' : True}
+            self.code_presenter_config = {'active': True}
             if self.project_data.get('settings', None) is None:
                 self.project_data['settings'] = {}
-            self.project_data['settings']['codepresenter'] = self.code_presenter_config
+            self.project_data['settings']['codepresenter'] =\
+                self.code_presenter_config
 
         self.code_presenter_config['source'] = self.source
         self.code_presenter_config['sink'] = self.sink
@@ -135,7 +136,7 @@ class CodePresenterProject(object):
         self.window.set_project_data(self.project_data)
 
     def clear_sink(self):
-        """ 
+        """
             clear out the sink, closing all views in the process.
             @todo: deal with directories
         """
@@ -160,7 +161,8 @@ class CodePresenterProject(object):
             start the code presentation
         """
         if self.source is None or self.sink is None:
-            print("CodePresenter: Refusing to activate without a source and a sink")
+            print(("CodePresenter: Refusing to activate without"
+                   " a source and a sink"))
             return
 
         source_files = os.listdir(self.source)
