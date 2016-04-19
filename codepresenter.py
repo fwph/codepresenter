@@ -1,7 +1,7 @@
-""" 
+"""
 CodePresenter plugin for Sublime Text
 
-Loads a given file, and gradually reveals it as you bang on the keyboard. 
+Loads a given file, and gradually reveals it as you bang on the keyboard.
 
 Known issue: banging on the 'enter' key will frequently cause macros to run,
 which this doesn't deal with nicely now. So skip enter.
@@ -9,6 +9,7 @@ which this doesn't deal with nicely now. So skip enter.
 import os
 import sublime
 import sublime_plugin
+
 
 class CodePresenterView(object):
     """ code presenter model for a particular view """
@@ -26,10 +27,10 @@ class CodePresenterView(object):
     def view_id(self):
         """ access to the id of the view this is using """
         return self.view.id()
-    
+
     def do_edit(self, edit):
         """ do the actual edit. first erase the text that was just added 
-            (last character, since this should be called for every character 
+            (last character, since this should be called for every character
             entry) then append the next character.
 
             if the cursor selection is *not* at the end of the file, though
@@ -42,14 +43,17 @@ class CodePresenterView(object):
 
         cursor = self.view.sel()[0]
         cursor.a = cursor.a - 1
-        if cursor.b != self.view.size() or self.index >= len(self.character_source):
+        if cursor.b != self.view.size() or self.index >=\
+                len(self.character_source):
             pass
         else:
             self.last_region = cursor
             self.view.erase(edit, cursor)
-            self.view.insert(edit, self.view.size(), self.character_source[self.index])
+            self.view.insert(edit, self.view.size(),
+                             self.character_source[self.index])
             self.index += 1
             self.last_size = self.view.size()
+
 
 class CodePresenterProject(object):
     """ handling for the code presenter project itself.
@@ -85,7 +89,6 @@ class CodePresenterProject(object):
 
         return cls.PROJECTS[window.id()]
 
-
     @classmethod
     def find_view(cls, view):
         """ used to retrieve a particular project by window ID """
@@ -100,14 +103,16 @@ class CodePresenterProject(object):
     def project_id(self):
         """ id of the project object is the window id """
         return self.window.id()
-    
+
     def load_config(self):
         """ load the codepresenter config for the project """
         self.project_file = self.window.project_file_name()
         self.project_data = self.window.project_data()
-        
+
         if self.project_file is not None:
-            self.code_presenter_config = self.project_data.get('settings', {}).get('codepresenter', None)
+            self.code_presenter_config =\
+                self.project_data.get('settings', {}).get('codepresenter',
+                                                          None)
         if self.code_presenter_config is not None:
             self.source = self.code_presenter_config.get('source', None)
             self.sink = self.code_presenter_config.get('sink', None)
@@ -129,10 +134,9 @@ class CodePresenterProject(object):
 
         self.window.set_project_data(self.project_data)
 
-
     def clear_sink(self):
         """ 
-            clear out the sink, closing all views in the process. 
+            clear out the sink, closing all views in the process.
             @todo: deal with directories
         """
         self.load_config()
@@ -143,7 +147,7 @@ class CodePresenterProject(object):
             view.set_scratch(True)
             self.window.run_command("close_file")
 
-        # remove all sink files 
+        # remove all sink files
         if self.sink is not None:
             for sinkfile in os.listdir(self.sink):
                 sinkpath = os.path.join(self.sink, sinkfile)
@@ -178,11 +182,12 @@ class CodePresenterProject(object):
         """ retrieve a view from the local store """
         return self.views.get(view.id(), None)
 
+
 class CodePresenterBaseCommand(sublime_plugin.WindowCommand):
-    """ base class for the various commands that need info about the project """
+    """ base class for the various commands that need info about
+        the project """
     def __init__(self, *args, **kwargs):
         super(CodePresenterBaseCommand, self).__init__(*args, **kwargs)
-        
         self.cp_project = CodePresenterProject.get_project(self.window)
 
     def load_config(self):
@@ -190,7 +195,7 @@ class CodePresenterBaseCommand(sublime_plugin.WindowCommand):
         self.cp_project.load_config()
 
 
-class CodePresenterSetSourceCommand(CodepresenterBaseCommand):
+class CodePresenterSetSourceCommand(CodePresenterBaseCommand):
     """ command for the sidebar to set the code presenter source directory """
     def __init__(self, *args, **kwargs):
         super(CodePresenterSetSourceCommand, self).__init__(*args, **kwargs)
@@ -202,7 +207,8 @@ class CodePresenterSetSourceCommand(CodepresenterBaseCommand):
         self.cp_project.source = dirs[0]
         self.cp_project.update_project_config()
 
-class CodePresenterSetSinkCommand(CodepresenterBaseCommand):
+
+class CodePresenterSetSinkCommand(CodePresenterBaseCommand):
     """ command for the sidebar to set the code presenter sink directory """
     def __init__(self, *args, **kwargs):
         super(CodePresenterSetSinkCommand, self).__init__(*args, **kwargs)
@@ -214,7 +220,8 @@ class CodePresenterSetSinkCommand(CodepresenterBaseCommand):
         self.cp_project.sink = dirs[0]
         self.cp_project.update_project_config()
 
-class CodePresenterDebugCommand(CodepresenterBaseCommand):
+
+class CodePresenterDebugCommand(CodePresenterBaseCommand):
     """ print some debug information to the console """
     def __init__(self, *args, **kwargs):
         super(CodePresenterDebugCommand, self).__init__(*args, **kwargs)
@@ -224,15 +231,17 @@ class CodePresenterDebugCommand(CodepresenterBaseCommand):
         print(self.cp_project)
         print(os.listdir(self.cp_project.source))
 
-class CodePresenterActivateCommand(CodepresenterBaseCommand):
+
+class CodePresenterActivateCommand(CodePresenterBaseCommand):
     def __init__(self, *args, **kwargs):
         super(CodePresenterActivateCommand, self).__init__(*args, **kwargs)
-        
+
     def run(self):
         self.load_config()
 
         self.cp_project.clear_sink()
         self.cp_project.activate()
+
 
 class CodePresenterInsertCommand(sublime_plugin.TextCommand):
     """
@@ -275,4 +284,3 @@ class CodePresenterEventListener(sublime_plugin.EventListener):
             elif cp_view.last_size == view.size():
                 return
             view.run_command('code_presenter_insert')
-
