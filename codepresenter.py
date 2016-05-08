@@ -7,11 +7,13 @@ Known issue: banging on the 'enter' key will frequently cause macros to run,
 which this doesn't deal with nicely now. So skip enter.
 """
 import os
+import shutil
 import sublime
 import sublime_plugin
 
 
 class CodePresenterView(object):
+    PADDING = 25
     """ code presenter model for a particular view """
     def __init__(self, view, source, sink):
         self.view = view
@@ -22,6 +24,11 @@ class CodePresenterView(object):
         self.index = 0
         self.last_region = sublime.Region(-1, 0)
         self.last_size = None
+
+    @property
+    def done(self):
+        return self.index >= len(self.character_source) +\
+                CodePresenterView.PADDING
 
     @property
     def view_id(self):
@@ -43,9 +50,14 @@ class CodePresenterView(object):
 
         cursor = self.view.sel()[0]
         cursor.a = cursor.a - 1
-        if cursor.b != self.view.size() or self.index >=\
-                len(self.character_source):
+        if cursor.b != self.view.size():
             pass
+        elif self.index >= len(self.character_source):
+            # this provides a little leeway to stop typing
+            if not self.done:
+                self.last_region = cursor
+                self.view.erase(edit, cursor)
+                self.index += 1
         else:
             self.last_region = cursor
             self.view.erase(edit, cursor)
@@ -145,16 +157,24 @@ class CodePresenterProject(object):
         # close all the views
         for view in self.window.views():
             self.window.focus_view(view)
-            view.set_scratch(True)
             self.window.run_command("close_file")
 
-        # remove all sink files
-        if self.sink is not None:
-            for sinkfile in os.listdir(self.sink):
-                sinkpath = os.path.join(self.sink, sinkfile)
-                if os.path.exists(sinkpath):
-                    os.remove(sinkpath)
+        shutil.rmtree(self.sink)
+        os.mkdir(self.sink)
+
         self.views = {}
+
+    @classmethod
+    def find_files(cls, path):
+        filelist = []
+        dirlist = []
+        for root, dirs, files in os.walk(path):
+            dirs[:] = [adir for adir in dirs if not adir.startswith('.')]
+            dirlist.extend(dirs)
+            files = [os.path.join(root, afile) for afile in files
+                     if not afile.startswith('.')]
+            filelist.extend(files)
+        return filelist, dirlist
 
     def activate(self):
         """
@@ -165,12 +185,17 @@ class CodePresenterProject(object):
                    " a source and a sink"))
             return
 
-        source_files = os.listdir(self.source)
+        source_files, source_dirs = self.find_files(self.source)
 
-        for filep in source_files:
-            sourcefile = os.path.join(self.source, filep)
-            sinkfile = os.path.join(self.sink, filep)
+        for sourcefile in source_files:
+            sinkfile = sourcefile.replace(self.source, self.sink, 1)
+
+            # make sure the containing directory exists
+            newdir = os.path.dirname(sinkfile)
+            os.makedirs(newdir, exist_ok=True)
+
             new_view = self.window.open_file(sinkfile)
+            new_view.set_scratch(True)
 
             cp_view = CodePresenterView(new_view, sourcefile, sinkfile)
 
@@ -207,6 +232,8 @@ class CodePresenterSetSourceCommand(CodePresenterBaseCommand):
         dirs = kwargs['dirs']
         self.cp_project.load_config()
         self.cp_project.source = dirs[0]
+        if self.cp_project.source == self.cp_project.sink:
+            self.cp_project.sink = None
         self.cp_project.update_project_config()
 
 
@@ -219,6 +246,8 @@ class CodePresenterSetSinkCommand(CodePresenterBaseCommand):
         """ run """
         dirs = kwargs['dirs']
         self.cp_project.load_config()
+        if dirs[0] == self.cp_project.source:
+            print("CodePresenter: refusing to set the source dir as sink")
         self.cp_project.sink = dirs[0]
         self.cp_project.update_project_config()
 

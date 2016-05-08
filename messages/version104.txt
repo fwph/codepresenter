@@ -1,0 +1,11 @@
+Updates to this version:
+
+- Now supports subdirectories:
+    + Directory crawling of the source will ignore any hidden subdirectories/files
+- Better handling of clear sink:
+    + No longer sets all views to scratch, so for any views not created by codepresenter, there will be prompts to save any changes
+    + Clear sink uses shutil.rmtree on the entire sink directory, which helps get rid of subdirectories
+- Other stuff:
+    + All presenter views are now set to scratch mode (will not prompt to save on close)
+    + Will not allow setting the sink to the source directory; if the source is set to the sink directory, the sink is cleared
+    + When the end of the input file is hit, the output file will ignore the next 50 key mashes so that you don't add junk to your wizardry
