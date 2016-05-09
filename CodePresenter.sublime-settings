@@ -1,0 +1,19 @@
+{
+	// Make changes to these settings in the User settings rather than here
+
+	// if true, CodePresenter will try to use rmtree on the sink folder & remove directories
+	// this is not reliable on windows
+	"delete_directories": false,
+
+	// directory names to ignore. this is a relative path rather than absolute. patterns are not
+	// supported
+	"ignore_directories": ["__pycache__"],
+
+	// file names to ignore. this is a relative path rather than absolute. patterns are not 
+	// supported
+	"ignore_files": [],
+
+	// in some cases, it may be desirable to create empty files when activation occurs rather 
+	// than waiting for the save on the new view.
+	"touch_sink_files": false
+}

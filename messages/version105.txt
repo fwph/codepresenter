@@ -1,0 +1,6 @@
+### CodePresenter 1.0.5
+Minor improvements:
+   * Some fixes to directory deletion; allow ignoring particular directory names.
+      * By default, \_\_pycache\_\_ will be ignored when found; this can be adjusted via the package settings.
+   * Setting to touch sink files on creation: this can be desirable in some cases (should improve interactions with sftp)
+   * Added settings menu items

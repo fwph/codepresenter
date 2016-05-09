@@ -1,0 +1,44 @@
+[
+    {
+        "caption": "Preferences",
+        "id": "preferences",
+        "children":
+        [
+            {
+                "caption": "Package Settings",
+                "id": "package-settings",
+                "children":
+                [
+                    {
+                        "caption": "CodePresenter",
+                        "children":
+                        [
+                            {
+                                "caption": "Settings – Default",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/CodePresenter/CodePresenter.sublime-settings"
+                                }
+                            },
+                            {
+                                "caption": "Settings – User",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/CodePresenter.sublime-settings"
+                                }
+                            },
+                            { "caption": "-" },
+                            {
+                                "caption": "README",
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/CodePresenter/README.md"
+                                }
+                            },
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]

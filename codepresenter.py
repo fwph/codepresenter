@@ -153,26 +153,42 @@ class CodePresenterProject(object):
             @todo: deal with directories
         """
         self.load_config()
-
+        cp_settings = sublime.load_settings('CodePresenter.sublime-settings')
         # close all the views
         for view in self.window.views():
             self.window.focus_view(view)
             self.window.run_command("close_file")
 
-        shutil.rmtree(self.sink)
-        os.mkdir(self.sink)
+        if cp_settings.get('delete_directories', False):
+            # this seems to be unreliable, at best, on windows
+            shutil.rmtree(self.sink)
+            os.mkdir(self.sink)
+        else:
+            toremove, _ = self.find_files(self.sink)
+            for file in toremove:
+                try:
+                    os.remove(file)
+                except TypeError:
+                    print(file)
 
         self.views = {}
 
     @classmethod
     def find_files(cls, path):
+        cp_settings = sublime.load_settings('CodePresenter.sublime-settings')
+        # neither of the following can handle file patterns, unfortunately
+        ignore_dirs = cp_settings.get('ignore_directories', [])
+        ignore_files = cp_settings.get('ignore_files', [])
+
         filelist = []
         dirlist = []
         for root, dirs, files in os.walk(path):
-            dirs[:] = [adir for adir in dirs if not adir.startswith('.')]
+            dirs[:] = [adir for adir in dirs if not (adir.startswith('.') or
+                                                     adir in ignore_dirs)]
             dirlist.extend(dirs)
             files = [os.path.join(root, afile) for afile in files
-                     if not afile.startswith('.')]
+                     if not (afile.startswith('.') or
+                             afile in ignore_files)]
             filelist.extend(files)
         return filelist, dirlist
 
@@ -184,6 +200,8 @@ class CodePresenterProject(object):
             print(("CodePresenter: Refusing to activate without"
                    " a source and a sink"))
             return
+        cp_settings = sublime.load_settings('CodePresenter.sublime-settings')
+        touch_files = cp_settings.get('touch_sink_files', False)
 
         source_files, source_dirs = self.find_files(self.source)
 
@@ -193,6 +211,9 @@ class CodePresenterProject(object):
             # make sure the containing directory exists
             newdir = os.path.dirname(sinkfile)
             os.makedirs(newdir, exist_ok=True)
+
+            if touch_files:
+                open(sinkfile, "w").close()
 
             new_view = self.window.open_file(sinkfile)
             new_view.set_scratch(True)
