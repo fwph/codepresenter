@@ -1,0 +1,8 @@
+### CodePresenter 1.1.0
+New features:
+
+   * Fixtures are folders/files that will not open views in the presentation, but will be copied directly to the sink folder
+   * Substages allow activating the presentation folder by folder (top level folders under the source only)
+   * Fast-Forward Points allow files to be partially written, so the presentation can start partway into a given file
+
+See the README for more info (under Preferences-> Package Settings-> CodePresenter)
