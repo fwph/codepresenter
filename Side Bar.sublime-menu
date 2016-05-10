@@ -5,30 +5,76 @@
     "children":
     [
         {
-            "id" : "set_code_presenter_source",
-            "caption" : "Set Source Folder",
-            "command" : "code_presenter_set_source",
-            "args" : {
-                "dirs" : []
-            }
-        },
-        {
-            "id" : "set_code_presenter_sink",
-            "caption" : "Set Sink Folder",
-            "command" : "code_presenter_set_sink",
-            "args" : {
-                "dirs" : []
-            }
-        },
-        {
             "id" : "code_presenter_activate",
             "caption" : "Start Code Presentation",
             "command" : "code_presenter_activate"
         },
         {
-            "id" : "code_presenter_debug",
-            "caption" : "debug",
-            "command" : "code_presenter_debug"
+            "id" : "code_presenter_activate_stage",
+            "caption" : "Run Presentation Stage",
+            "command" : "code_presenter_activate",
+            "args" : {
+                "dirs" : []
+            }
+        },
+        {
+            "id" : "code_presenter_next_stage",
+            "caption" : "Next Stage",
+            "command" : "code_presenter_next_stage"
+        },
+        {
+            "id" : "code_presenter_reset",
+            "caption" : "Reset Presentation",
+            "command" : "code_presenter_reset"
+        },
+        {
+            "id" : "code_presenter_reset",
+            "caption" : "Hard Reset Presentation (Clear Folders)",
+            "command" : "code_presenter_reset",
+            "args" : {
+                "hard" : true
+            }
+        },
+        {
+            "id" : "code_presenter_config_parent",
+            "caption" : "Configure",
+            "children" : 
+            [
+                {
+                    "id" : "set_code_presenter_source",
+                    "caption" : "Set Source Folder",
+                    "command" : "code_presenter_set_source",
+                    "args" : {
+                        "dirs" : []
+                    }
+                },
+                {
+                    "id" : "set_code_presenter_sink",
+                    "caption" : "Set Sink Folder",
+                    "command" : "code_presenter_set_sink",
+                    "args" : {
+                        "dirs" : []
+                    }
+                },
+                {
+                    "id" : "set_code_presenter_fixture",
+                    "caption" : "Set Fixture",
+                    "command" : "code_presenter_set_fixture",
+                    "args" : {
+                        "dirs" : [],
+                        "files" : []
+                    }
+                },
+                {
+                    "id" : "clear_code_presenter_fixture",
+                    "caption" : "Clear Fixture",
+                    "command" : "code_presenter_clear_fixture",
+                    "args" : {
+                        "dirs" : [],
+                        "files" : []
+                    }
+                },
+            ]
         }
     ]
 }

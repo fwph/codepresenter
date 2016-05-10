@@ -1,0 +1,6 @@
+[
+    { "caption": "CodePresenter: Start Code Presentation", "command": "code_presenter_activate"},
+    { "caption": "CodePresenter: Reset Code Presentation", "command": "code_presenter_reset"},
+    { "caption": "CodePresenter: Next Code Stage", "command": "code_presenter_next_stage"},
+
+]
