@@ -91,7 +91,14 @@ class CodePresenterProject(object):
         self.source = None
         self.sink = None
 
+        self.dir_fixtures = []
+        self.file_fixtures = []
+
         self.views = {}
+
+        # for substage presentations -- run folder by folder
+        self.last_stage = None
+        self.did_fixtures = False
 
         CodePresenterProject.PROJECTS[self.project_id] = self
         self.load_config()
@@ -119,6 +126,26 @@ class CodePresenterProject(object):
     def project_id(self):
         """ id of the project object is the window id """
         return self.window.id()
+
+    def set_fixtures(self, dirs, files):
+        self.load_config()
+        for adir in dirs:
+            if adir not in self.dir_fixtures:
+                self.dir_fixtures.append(adir)
+        for afile in files:
+            if afile not in self.file_fixtures:
+                self.file_fixtures.append(afile)
+        self.update_project_config()
+
+    def clear_fixtures(self, dirs, files):
+        self.load_config()
+        for adir in dirs:
+            if adir in self.dir_fixtures:
+                self.dir_fixtures.remove(adir)
+        for afile in files:
+            if afile in self.file_fixtures:
+                self.file_fixtures.remove(afile)
+        self.update_project_config()
 
     def set_ffwd_point(self, filename, offset):
         self.load_config()
@@ -148,7 +175,6 @@ class CodePresenterProject(object):
 
     def file_ffwd_offset(self, filename):
         offset = 0
-        print(self.code_presenter_config)
         if 'offsets' in self.code_presenter_config:
             offset = self.code_presenter_config['offsets'].get(filename, 0)
         return offset
@@ -165,6 +191,11 @@ class CodePresenterProject(object):
         if self.code_presenter_config is not None:
             self.source = self.code_presenter_config.get('source', None)
             self.sink = self.code_presenter_config.get('sink', None)
+            if 'fixtures' in self.code_presenter_config:
+                self.dir_fixtures =\
+                    self.code_presenter_config['fixtures'].get('dirs', [])
+                self.file_fixtures =\
+                    self.code_presenter_config['fixtures'].get('files', [])
 
     def update_project_config(self):
         """ write changes to the project config """
@@ -181,14 +212,21 @@ class CodePresenterProject(object):
 
         self.code_presenter_config['source'] = self.source
         self.code_presenter_config['sink'] = self.sink
+        self.code_presenter_config['fixtures'] = {
+            'dirs': self.dir_fixtures,
+            'files': self.file_fixtures,
+        }
 
         self.window.set_project_data(self.project_data)
 
-    def clear_sink(self):
+    def clear_sink(self, hard=False):
         """
             clear out the sink, closing all views in the process.
             @todo: deal with directories
         """
+        self.last_stage = None
+        self.did_fixtures = False
+
         self.load_config()
         cp_settings = sublime.load_settings('CodePresenter.sublime-settings')
         # close all the views
@@ -196,7 +234,7 @@ class CodePresenterProject(object):
             self.window.focus_view(view)
             self.window.run_command("close_file")
 
-        if cp_settings.get('delete_directories', False):
+        if cp_settings.get('delete_directories', False) or hard:
             # this seems to be unreliable, at best, on windows
             shutil.rmtree(self.sink)
             os.mkdir(self.sink)
@@ -210,8 +248,7 @@ class CodePresenterProject(object):
 
         self.views = {}
 
-    @classmethod
-    def find_files(cls, path):
+    def find_files(self, path):
         cp_settings = sublime.load_settings('CodePresenter.sublime-settings')
         # neither of the following can handle file patterns, unfortunately
         ignore_dirs = cp_settings.get('ignore_directories', [])
@@ -230,6 +267,40 @@ class CodePresenterProject(object):
         return filelist, dirlist
 
     def activate(self):
+        self.activate_from(self.source)
+
+    def next_stage(self):
+        substages = [os.path.join(self.source, adir)
+                     for adir in os.listdir(self.source)]
+        substages = [adir for adir in substages
+                     if os.path.isdir(adir)]
+        substages = [stage for stage in substages
+                     if stage not in self.dir_fixtures]
+        substages.sort()
+
+        if self.last_stage is None:
+            self.activate_from(substages[0])
+        else:
+            nextindex = substages.index(self.last_stage) + 1
+            if nextindex < len(substages):
+                self.activate_from(substages[nextindex])
+
+    def load_fixtures(self):
+        source_files, source_dirs = self.find_files(self.source)
+        for sourcefile in source_files:
+            if sourcefile in self.file_fixtures or\
+                any([sourcefile.startswith(adir)
+                     for adir in self.dir_fixtures]):
+
+                sinkfile = sourcefile.replace(self.source, self.sink, 1)
+
+                # make sure the containing directory exists
+                newdir = os.path.dirname(sinkfile)
+                os.makedirs(newdir, exist_ok=True)
+                shutil.copyfile(sourcefile, sinkfile)
+        self.did_fixtures = True
+
+    def activate_from(self, location):
         """
             start the code presentation
         """
@@ -237,17 +308,33 @@ class CodePresenterProject(object):
             print(("CodePresenter: Refusing to activate without"
                    " a source and a sink"))
             return
+        if not location.startswith(self.source):
+            print(("CodePresenter: Cannot activate presentation"
+                   " from %s (not in %s)") % (location, self.source))
+
+        self.last_stage = location
+        if not self.did_fixtures:
+            self.load_fixtures()
+
         cp_settings = sublime.load_settings('CodePresenter.sublime-settings')
         touch_files = cp_settings.get('touch_sink_files', False)
+        # handle fixtures
 
-        source_files, source_dirs = self.find_files(self.source)
+        source_files, source_dirs = self.find_files(location)
 
         for sourcefile in source_files:
+
+            if sourcefile in self.file_fixtures or\
+                any([sourcefile.startswith(adir)
+                     for adir in self.dir_fixtures]):
+                continue
+
             sinkfile = sourcefile.replace(self.source, self.sink, 1)
 
             # make sure the containing directory exists
             newdir = os.path.dirname(sinkfile)
             os.makedirs(newdir, exist_ok=True)
+
             offset = self.file_ffwd_offset(sourcefile)
             if touch_files or offset > 0:
                 sfile = open(sinkfile, "w")
@@ -260,7 +347,8 @@ class CodePresenterProject(object):
             new_view = self.window.open_file(sinkfile)
             new_view.set_scratch(True)
 
-            cp_view = CodePresenterView(new_view, sourcefile, sinkfile, offset)
+            cp_view = CodePresenterView(new_view, sourcefile,
+                                        sinkfile, offset)
             with open(sourcefile, 'r') as insource:
                 cp_view.character_source = list(insource.read())
 
@@ -317,6 +405,38 @@ class CodePresenterSetSinkCommand(CodePresenterBaseCommand):
         self.cp_project.update_project_config()
 
 
+class CodePresenterSetFixtureCommand(CodePresenterBaseCommand):
+    """ command for the sidebar to set a fixture
+
+        fixtures will be copied as is, without opening the file(s). can be
+        either a file or a directory.
+    """
+    def __init__(self, *args, **kwargs):
+        super(CodePresenterSetFixtureCommand, self).__init__(*args, **kwargs)
+
+    def run(self, **kwargs):
+        """ run """
+        dirs = kwargs['dirs']
+        files = kwargs['files']
+        self.cp_project.set_fixtures(dirs, files)
+
+
+class CodePresenterClearFixtureCommand(CodePresenterBaseCommand):
+    """ command for the sidebar to clear a fixture
+
+        fixtures will be copied as is, without opening the file(s). can be
+        either a file or a directory.
+    """
+    def __init__(self, *args, **kwargs):
+        super(CodePresenterClearFixtureCommand, self).__init__(*args, **kwargs)
+
+    def run(self, **kwargs):
+        """ run """
+        dirs = kwargs['dirs']
+        files = kwargs['files']
+        self.cp_project.clear_fixtures(dirs, files)
+
+
 class CodePresenterDebugCommand(CodePresenterBaseCommand):
     """ print some debug information to the console """
     def __init__(self, *args, **kwargs):
@@ -332,11 +452,32 @@ class CodePresenterActivateCommand(CodePresenterBaseCommand):
     def __init__(self, *args, **kwargs):
         super(CodePresenterActivateCommand, self).__init__(*args, **kwargs)
 
-    def run(self):
+    def run(self, *args, **kwargs):
         self.load_config()
 
-        self.cp_project.clear_sink()
-        self.cp_project.activate()
+        if 'dirs' in kwargs:
+            self.cp_project.activate_from(kwargs['dirs'][0])
+        else:
+            self.cp_project.clear_sink()
+            self.cp_project.activate()
+
+
+class CodePresenterNextStageCommand(CodePresenterBaseCommand):
+    def __init__(self, *args, **kwargs):
+        super(CodePresenterNextStageCommand, self).__init__(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        self.load_config()
+        self.cp_project.next_stage()
+
+
+class CodePresenterResetCommand(CodePresenterBaseCommand):
+    def __init__(self, *args, **kwargs):
+        super(CodePresenterResetCommand, self).__init__(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        self.load_config()
+        self.cp_project.clear_sink(kwargs.get('hard', False))
 
 
 class CodePresenterInsertCommand(sublime_plugin.TextCommand):
