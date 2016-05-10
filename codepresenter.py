@@ -15,14 +15,14 @@ import sublime_plugin
 class CodePresenterView(object):
     PADDING = 25
     """ code presenter model for a particular view """
-    def __init__(self, view, source, sink):
+    def __init__(self, view, source, sink, offset=0):
         self.view = view
         self.source = source
         self.sink = sink
 
         self.character_source = None
-        self.index = 0
-        self.last_region = sublime.Region(-1, 0)
+        self.index = offset
+        self.last_region = sublime.Region(offset-1, offset)
         self.last_size = None
 
     @property
@@ -35,6 +35,14 @@ class CodePresenterView(object):
         """ access to the id of the view this is using """
         return self.view.id()
 
+    def set_initial_cursor(self):
+        self.view.sel().clear()
+        extent = self.view.layout_extent()
+        pt = self.view.layout_to_text(extent)
+        endreg = sublime.Region(pt, pt)
+        self.view.sel().add(endreg)
+        self.last_region = endreg
+
     def do_edit(self, edit):
         """ do the actual edit. first erase the text that was just added
             (last character, since this should be called for every character
@@ -43,10 +51,6 @@ class CodePresenterView(object):
             if the cursor selection is *not* at the end of the file, though
             do nothing
         """
-        if self.character_source is None:
-            with open(self.source, 'r') as insource:
-                self.character_source = list(insource.read())
-                self.index = 0
 
         cursor = self.view.sel()[0]
         cursor.a = cursor.a - 1
@@ -115,6 +119,39 @@ class CodePresenterProject(object):
     def project_id(self):
         """ id of the project object is the window id """
         return self.window.id()
+
+    def set_ffwd_point(self, filename, offset):
+        self.load_config()
+        if not filename.startswith(self.source):
+            print("CodePresenter: file %s not in source %s" % (filename,
+                                                               self.source))
+            return
+
+        if 'offsets' not in self.code_presenter_config:
+            self.code_presenter_config['offsets'] = {}
+        self.code_presenter_config['offsets'][filename] = offset
+        self.update_project_config()
+
+    def clear_ffwd_point(self, filename):
+        self.load_config()
+
+        if not filename.startswith(self.source):
+            print("CodePresenter: file %s not in source %s" % (filename,
+                                                               self.source))
+            return
+
+        if 'offsets' in self.code_presenter_config and filename in \
+                self.code_presenter_config['offsets']:
+            del self.code_presenter_config['offsets'][filename]
+
+        self.update_project_config()
+
+    def file_ffwd_offset(self, filename):
+        offset = 0
+        print(self.code_presenter_config)
+        if 'offsets' in self.code_presenter_config:
+            offset = self.code_presenter_config['offsets'].get(filename, 0)
+        return offset
 
     def load_config(self):
         """ load the codepresenter config for the project """
@@ -211,14 +248,21 @@ class CodePresenterProject(object):
             # make sure the containing directory exists
             newdir = os.path.dirname(sinkfile)
             os.makedirs(newdir, exist_ok=True)
-
-            if touch_files:
-                open(sinkfile, "w").close()
+            offset = self.file_ffwd_offset(sourcefile)
+            if touch_files or offset > 0:
+                sfile = open(sinkfile, "w")
+                if offset is not None:
+                    with open(sourcefile, 'r') as ifile:
+                        contents = ifile.read()
+                        sfile.write(contents[:offset])
+                sfile.close()
 
             new_view = self.window.open_file(sinkfile)
             new_view.set_scratch(True)
 
-            cp_view = CodePresenterView(new_view, sourcefile, sinkfile)
+            cp_view = CodePresenterView(new_view, sourcefile, sinkfile, offset)
+            with open(sourcefile, 'r') as insource:
+                cp_view.character_source = list(insource.read())
 
             self.add_view(cp_view)
 
@@ -313,6 +357,43 @@ class CodePresenterInsertCommand(sublime_plugin.TextCommand):
             cp_view.do_edit(edit)
 
 
+class CodePresenterSetFforward(sublime_plugin.TextCommand):
+    """
+    Set a fast forward point for this file.
+
+    If set, the file up to the given point will be loaded, and cursor placed
+    at this point to continue the presentation from there.
+    """
+    def __init__(self, *args, **kwargs):
+        super(CodePresenterSetFforward, self).__init__(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        """ translating the event coords to a text offset seems
+            over-complicated, but it seems to work.
+        """
+        coords = list(kwargs['event'].values())
+        textcoords = self.view.window_to_text(coords)
+        row, col = self.view.rowcol(textcoords)
+        text_offset = self.view.text_point(row, col)
+        project = CodePresenterProject.get_project(self.view.window())
+        project.set_ffwd_point(self.view.file_name(), text_offset)
+
+    def want_event(self):
+        return True
+
+
+class CodePresenterClearFforward(sublime_plugin.TextCommand):
+    """
+    Clears the fastforward point, if it exists.
+    """
+    def __init__(self, *args, **kwargs):
+        super(CodePresenterClearFforward, self).__init__(*args, **kwargs)
+
+    def run(self, *args, **kwargs):
+        project = CodePresenterProject.get_project(self.view.window())
+        project.clear_ffwd_point(self.view.file_name())
+
+
 class CodePresenterEventListener(sublime_plugin.EventListener):
     """
     Listens for new views, and view modified events.
@@ -336,3 +417,10 @@ class CodePresenterEventListener(sublime_plugin.EventListener):
             elif cp_view.last_size == view.size():
                 return
             view.run_command('code_presenter_insert')
+
+    def on_load(self, view):
+        """ set up the proper cursor point once the file loads """
+        cp_view = CodePresenterProject.find_view(view)
+
+        if cp_view is not None:
+            cp_view.set_initial_cursor()
