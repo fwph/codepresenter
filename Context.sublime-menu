@@ -1,0 +1,13 @@
+[
+    { "caption" : "-", "id" : "codepresenter-start"},
+    { "caption" : "CodePresenter",
+        "id" : "codepresenter-context-parent",
+        "children" :
+            [
+                { "caption" : "Set Fast Forward Point", "command" : "code_presenter_set_fforward"},
+                { "caption" : "Clear Fast Forward Point", "command" : "code_presenter_clear_fforward"}
+
+            ]
+    },
+    { "caption" : "-", "id" : "codepresenter-end"}
+]
