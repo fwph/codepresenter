@@ -14,9 +14,9 @@ The easiest way to install this is with [Package Control](http://wbond.net/subli
  * If you just went and installed Package Control, you probably need to restart Sublime Text before doing this next bit.
  * Bring up the Command Palette (Command+Shift+p on OS X, Control+Shift+p on Linux/Windows).
  * Select "Package Control: Install Package" (it'll take a few seconds)
- * Select Git when the list appears.
+ * Select CodePresenter when the list appears.
 
-Package Control will automatically keep Git up to date with the latest version.
+Package Control will automatically keep CodePresenter up to date with the latest version.
 
 ### Manually
  * Clone the repo
