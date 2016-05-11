@@ -27,14 +27,14 @@ Package Control will automatically keep CodePresenter up to date with the latest
 
 ### Basic Usage
   * Open or create a project
-  * Add a folder or select one that exists and has files in it
+  * Add a folder or select one that exists and has some files
   * Add a new empty folder
   * Right click on the first folder (in the side bar), and select
         *CodePresenter Actions -> Configure -> Set Source Folder*
   * Right click on the empty folder (in the side bar), and select
         *CodePresenter Actions -> Configure -> Set Sink Folder*
-  * Right click on any file or folder in the side bar, and select
-        *CodePresenter Actions -> Start Code Presentation*
+  * Right click anywhere in the side bar, and select
+        *CodePresenter Actions -> Start Code Presentation* (or do this from the command palette)
   * Mash that keyboard!
   
 ### Advanced Usage
@@ -44,15 +44,15 @@ Package Control will automatically keep CodePresenter up to date with the latest
  * _Multi-Stage_ : If your source contains multiple folders, you can start the presentation from one of the top level folders. 
    + Right click on a folder in the Side Bar and select *CodePresenter Actions -> Run Presentation Stage*
    + Following stages can be run with *Next Stage*
-   + The presentation can be *Reset Presentation* or *Hard Reset Presentation*
+   + The presentation can be reset *Reset Presentation* or *Hard Reset Presentation*
    + Running *Next Stage* without first using *Run Presentation Stage* on a particular folder will start from the first stage
  * _Fast Forward_ : Files can start partially written
    + Open a file from your source folder
    + Locate the place where you want to start this file in the presentation
    + Right click and select *Code Presenter-> Set Fast Forward Point*
    + To clear, right click and select *Code Presenter-> Clear Fast Forward Point*
-+  _Keyboard Shortcuts_:
-    *  Commands for binding are *code_presenter_activate*, *code_presenter_reset*, and *code_presenter_next_stage*
+ *  _Keyboard Shortcuts_:
+   +  Commands for binding are *code_presenter_activate*, *code_presenter_reset*, and *code_presenter_next_stage*
   
 ### IMPORTANT:
 
