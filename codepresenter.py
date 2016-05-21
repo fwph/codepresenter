@@ -10,6 +10,7 @@ import os
 import shutil
 import sublime
 import sublime_plugin
+import re
 
 
 class CodePresenterView(object):
@@ -253,6 +254,9 @@ class CodePresenterProject(object):
         # neither of the following can handle file patterns, unfortunately
         ignore_dirs = cp_settings.get('ignore_directories', [])
         ignore_files = cp_settings.get('ignore_files', [])
+        ignore_patterns = cp_settings.get('ignore_patterns', [])
+
+        ignore_re = [re.compile(pattern) for pattern in ignore_patterns]
 
         filelist = []
         dirlist = []
@@ -262,7 +266,8 @@ class CodePresenterProject(object):
             dirlist.extend(dirs)
             files = [os.path.join(root, afile) for afile in files
                      if not (afile.startswith('.') or
-                             afile in ignore_files)]
+                             afile in ignore_files or
+                             any([pat.match(afile) for pat in ignore_re]))]
             filelist.extend(files)
         return filelist, dirlist
 
@@ -322,6 +327,9 @@ class CodePresenterProject(object):
 
         source_files, source_dirs = self.find_files(location)
 
+        # order the source file tabs in a nice way
+        source_files.sort(reverse=True)
+
         for sourcefile in source_files:
 
             if sourcefile in self.file_fixtures or\
@@ -353,6 +361,10 @@ class CodePresenterProject(object):
                 cp_view.character_source = list(insource.read())
 
             self.add_view(cp_view)
+
+        # this helps presentations using the sftp plugin operate smoothly
+        if cp_settings.get('sftp_upload_folder', False):
+            self.window.run_command('sftp_upload_folder')
 
     def add_view(self, view):
         """ put it in the view dict. """

@@ -1,0 +1,5 @@
+### CodePresenter 1.1.2
+Small updates
+    * Open the presentation files in reverse-alphabetical order so that the first alphabetically first filename is focused when the presentation runs (or a substage runs)
+    * Add a setting to call sftp_upload_folder after a presentation stage is run, which should help with compatibility when your sink folder is mapped to a remote location via the SFTP plugin
+    * Add a regex file pattern exclude setting

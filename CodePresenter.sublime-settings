@@ -13,7 +13,15 @@
 	// supported
 	"ignore_files": [],
 
+	// regular expressions over filenames to ignore
+	"ignore_patterns": [".*\\.pyc$"],
+
 	// in some cases, it may be desirable to create empty files when activation occurs rather 
 	// than waiting for the save on the new view.
-	"touch_sink_files": false
+	"touch_sink_files": false,
+
+	// when your sink directory is mapped to a remote using the sftp plugin, you may want
+	// to set this to true to make sure that folders are uploaded as you step through stages
+	// this will most likely error out harmlessly if sftp is not installed / the folder is not mapped
+	"sftp_upload_folder": false
 }
