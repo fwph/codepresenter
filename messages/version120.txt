@@ -1,0 +1,4 @@
+### CodePresenter 1.2.0
+Potentially breaking update:
+
+* CodePresenter now assumes that all source files are UTF-8 encoded. Previously, it would open files with 'system default' encoding (that is, without passing an encoding to the open calls), but this now seems to end up opening files as ASCII. This is not a full solution, but should make this problem better for now.

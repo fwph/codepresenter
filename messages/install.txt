@@ -18,3 +18,4 @@ IMPORTANT NOTES:
   * All views in the active window will be closed, even if changes have been made, when the presentation is started
   * It won't handle subdirectories nicely, yet.
   * I do not recommend mashing on the enter key; there are currently some issues with that (notably, tab insertion and various macros that occur when the enter key is pressed.)
+  * The source files should be UTF-8 encoded as of version 1.2.0 to avoid causing problems
