@@ -579,7 +579,12 @@ class CodePresenterEventListener(sublime_plugin.EventListener):
 
     def on_load(self, view):
         """ set up the proper cursor point once the file loads """
-        cp_view = CodePresenterProject.find_view(view)
+        try:
+            cp_view = CodePresenterProject.find_view(view)
 
-        if cp_view is not None:
-            cp_view.set_initial_cursor()
+            if cp_view is not None:
+                cp_view.set_initial_cursor()
+        except AttributeError:
+            print('CodePresenter: Got an attributeerror. Probably not my view')
+        except Exception as exc:
+            print('CodePresenter encountered a problem in on_load: %s' % exc)
