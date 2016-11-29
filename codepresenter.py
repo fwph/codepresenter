@@ -566,16 +566,21 @@ class CodePresenterEventListener(sublime_plugin.EventListener):
         """ runs the insertion command when the target view is modified """
         if view.window() is None:
             return
-        cp_view = CodePresenterProject.find_view(view)
-        if cp_view is not None:
-            if cp_view.last_size is None:
-                cp_view.last_size = view.size()
-            elif cp_view.last_size > view.size():
-                cp_view.last_size = view.size()
-                return
-            elif cp_view.last_size == view.size():
-                return
-            view.run_command('code_presenter_insert')
+        try:
+            cp_view = CodePresenterProject.find_view(view)
+            if cp_view is not None:
+                if cp_view.last_size is None:
+                    cp_view.last_size = view.size()
+                elif cp_view.last_size > view.size():
+                    cp_view.last_size = view.size()
+                    return
+                elif cp_view.last_size == view.size():
+                    return
+                view.run_command('code_presenter_insert')
+        except AttributeError:
+            print('CodePresenter: Got an attributeerror. Probably not my view')
+        except Exception as exc:
+            print('CodePresenter encountered a problem in on_load: %s' % exc)
 
     def on_load(self, view):
         """ set up the proper cursor point once the file loads """
