@@ -338,30 +338,36 @@ class CodePresenterProject(object):
                 continue
 
             sinkfile = sourcefile.replace(self.source, self.sink, 1)
+            try:
+                # make sure the containing directory exists
+                newdir = os.path.dirname(sinkfile)
+                os.makedirs(newdir, exist_ok=True)
+                offset = self.file_ffwd_offset(sourcefile)
+                if touch_files or offset > 0:
+                    sfile = open(sinkfile, "w", encoding='utf-8')
+                    if offset is not None:
+                        with open(sourcefile, 'r', encoding='utf-8') as ifile:
+                            contents = ifile.read()
+                            sfile.write(contents[:offset])
+                    sfile.close()
 
-            # make sure the containing directory exists
-            newdir = os.path.dirname(sinkfile)
-            os.makedirs(newdir, exist_ok=True)
+                new_view = self.window.open_file(sinkfile)
+                new_view.set_scratch(True)
 
-            offset = self.file_ffwd_offset(sourcefile)
-            if touch_files or offset > 0:
-                sfile = open(sinkfile, "w")
-                if offset is not None:
-                    with open(sourcefile, 'r') as ifile:
-                        contents = ifile.read()
-                        sfile.write(contents[:offset])
-                sfile.close()
+                cp_view = CodePresenterView(new_view, sourcefile,
+                                            sinkfile, offset)
+                with open(sourcefile, 'r', encoding='utf-8') as insource:
+                    cp_view.character_source = list(insource.read())
+                self.add_view(cp_view)
 
-            new_view = self.window.open_file(sinkfile)
-            new_view.set_scratch(True)
-
-            cp_view = CodePresenterView(new_view, sourcefile,
-                                        sinkfile, offset)
-            with open(sourcefile, 'r') as insource:
-                cp_view.character_source = list(insource.read())
-
-            self.add_view(cp_view)
-
+            except UnicodeDecodeError:
+                print(("CodePresenter: Error decoding source file. This likely"
+                       " means the file is not encoded as utf-8, which is "
+                       "currently a requirement of CodePresenter. The "
+                       "problem file was: %s") % sourcefile)
+                print(("Please report an issue at "
+                       "https://github.com/fwph/codepresenter/issue with the "
+                       "correct encoding of your file if you know it."))
         # this helps presentations using the sftp plugin operate smoothly
         if cp_settings.get('sftp_upload_folder', False):
             self.window.run_command('sftp_upload_folder')
