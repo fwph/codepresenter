@@ -578,7 +578,7 @@ class CodePresenterEventListener(sublime_plugin.EventListener):
                     return
                 view.run_command('code_presenter_insert')
         except AttributeError:
-            print('CodePresenter: Got an attributeerror. Probably not my view')
+            pass
         except Exception as exc:
             print('CodePresenter encountered a problem in on_load: %s' % exc)
 
@@ -590,6 +590,6 @@ class CodePresenterEventListener(sublime_plugin.EventListener):
             if cp_view is not None:
                 cp_view.set_initial_cursor()
         except AttributeError:
-            print('CodePresenter: Got an attributeerror. Probably not my view')
+            pass
         except Exception as exc:
             print('CodePresenter encountered a problem in on_load: %s' % exc)
